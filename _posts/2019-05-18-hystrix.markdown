@@ -1,22 +1,22 @@
 ---
 layout: post
-title:  "Hystrix源码分析(一)"
+title:  "HystrixԴ�����(һ)"
 date:   2019-05-18 21:03:36 +800
 ---
-##### 一、开篇
-hystix相信大家都不陌生。github地址：https://github.com/Netflix/Hystrix。中文名称翻译为刺猬，顾明思议是用来保护我们系统的。在分布式系统中可能会依赖很多服务，当依赖的服务出现异常，接口时延上涨，超时，很有可能会把上游业务的接口给拖死，把线程资源耗尽。我们需要一种机制对依赖服务的可用性做分析，如果依赖服务的失败率异常，能够做到类似保险丝的作用，把流量切断，避免产生更严重的故障。
-其中最核心的组建就是里面的断路器。我们主要分析两点：
+##### һ����ƪ
+hystix���Ŵ�Ҷ���İ����github��ַ��https://github.com/Netflix/Hystrix���������Ʒ���Ϊ��⬣�����˼����������������ϵͳ�ġ��ڷֲ�ʽϵͳ�п��ܻ������ܶ���񣬵������ķ�������쳣���ӿ�ʱ�����ǣ���ʱ�����п��ܻ������ҵ��Ľӿڸ����������߳���Դ�ľ���������Ҫһ�ֻ��ƶ���������Ŀ�������������������������ʧ�����쳣���ܹ��������Ʊ���˿�����ã��������жϣ�������������صĹ��ϡ�
+��������ĵ��齨��������Ķ�·����������Ҫ�������㣺
 
-- 何时决定把断路器打开
-- 当依赖服务恢复的时候如何自动恢复
-##### 二、源码分析
-###### 1. 整体流程
+- ��ʱ�����Ѷ�·����
+- ����������ָ���ʱ������Զ��ָ�
+##### ����Դ�����
+###### 1. ��������
 
-我们借用hystrix wiki上的一张图来简单了解整个流程。本次关注的核心点是4,7。也就是断路器的实现逻辑。
+���ǽ���hystrix wiki�ϵ�һ��ͼ�����˽��������̡����ι�ע�ĺ��ĵ���4,7��Ҳ���Ƕ�·����ʵ���߼���
 
-###### 2. 断路器实现
-断路器的接口：HystrixCircuitBreaker
-```
+###### 2. ��·��ʵ��
+��·���Ľӿڣ�HystrixCircuitBreaker
+```java
 /**
  * Circuit-breaker logic that is hooked into {@link HystrixCommand} execution and will stop allowing executions if failures have gone past the defined threshold.
  * <p>
@@ -57,14 +57,15 @@ public interface HystrixCircuitBreaker {
      */
     boolean attemptExecution();
 ```
-我们重点关注两个方法allowRequest和isOpen，分别是判断是否允许流量进来和断路器开启关闭的核心接口。
-HystrixCircuitBreaker有两个实现类。分别是：
+�����ص��ע��������allowRequest��isOpen���ֱ����ж��Ƿ��������������Ͷ�·�������رյĺ��Ľӿڡ�
+HystrixCircuitBreaker������ʵ���ࡣ�ֱ��ǣ�
+
 - NoOpCircuitBreaker
-空实现类
+��ʵ����
 - HystrixCircuitBreakerImpl
-默认实现类。本次分析的重点就是这个类。
-###### 3. 调用栈
-我们重点看下applyHystrixSemantics这个方法。
+Ĭ��ʵ���ࡣ���η������ص��������ࡣ
+###### 3. ����ջ
+�����ص㿴��applyHystrixSemantics���������
 ```
     private Observable<R> applyHystrixSemantics(final AbstractCommand<R> _cmd) {
         // mark that we're starting execution on the ExecutionHook
@@ -79,9 +80,9 @@ HystrixCircuitBreaker有两个实现类。分别是：
         }
     }
 ```
-通过断路器控制是否应该走正常的调用逻辑。
-###### 4. 断路器判断逻辑
-```
+ͨ����·�������Ƿ�Ӧ���������ĵ����߼���
+###### 4. ��·���ж��߼�
+```java
 @Override
         public boolean allowRequest() {
             if (properties.circuitBreakerForceOpen().get()) {
@@ -97,9 +98,9 @@ HystrixCircuitBreaker有两个实现类。分别是：
             return !isOpen() || allowSingleTest();
         }
 ```
-- 若断路器关闭，则允许访问。
-- 否则尝试放行一部分流量进来验收依赖服务是否正常
-接下来看isOpen的实现方法。
+- ����·���رգ����������ʡ�
+- �����Է���һ�������������������������Ƿ�����
+��������isOpen��ʵ�ַ�����
 ```
 @Override
         public boolean isOpen() {
@@ -111,21 +112,21 @@ HystrixCircuitBreaker有两个实现类。分别是：
             // we're closed, so let's see if errors have made us so we should trip the circuit open
             HealthCounts health = metrics.getHealthCounts();
 
-- 请求总数没有达到设置的请求阈值，不会打开断路器。(对于请求太少的场景，失败率没有太大意义)
+- ��������û�дﵽ���õ�������ֵ������򿪶�·����(��������̫�ٵĳ�����ʧ����û��̫������)
             // check if we are past the statisticalWindowVolumeThreshold
             if (health.getTotalRequests() < properties.circuitBreakerRequestVolumeThreshold().get()) {
                 // we are not past the minimum volume threshold for the statisticalWindow so we'll return false immediately and not calculate anything
                 return false;
             }
-- 当失败率大于某个阈值的时候，把断路器打开。
+- ��ʧ���ʴ���ĳ����ֵ��ʱ�򣬰Ѷ�·���򿪡�
             if (health.getErrorPercentage() < properties.circuitBreakerErrorThresholdPercentage().get()) {
                 return false;
             } else {
-- 这里要考虑并发的场景，所以使用CAS的操作
+- ����Ҫ���ǲ����ĳ���������ʹ��CAS�Ĳ���
                 // our failure rate is too high, trip the circuit
                 if (circuitOpen.compareAndSet(false, true)) {
                     // if the previousValue was false then we want to set the currentTime
-- 设置断路器的开启时间是为了让服务在一定的时间范围内接受少量的流量来决定是否需要把断路器重新关闭。                    
+- ���ö�·���Ŀ���ʱ����Ϊ���÷�����һ����ʱ�䷶Χ�ڽ��������������������Ƿ���Ҫ�Ѷ�·�����¹رա�                    
 circuitOpenedOrLastTestedTime.set(System.currentTimeMillis());
                     return true;
                 } else {
@@ -139,8 +140,8 @@ circuitOpenedOrLastTestedTime.set(System.currentTimeMillis());
 
     }
 ```
-isOpen的逻辑很清晰，简而言之就是当失败率大于某个阈值的时候会把断路器打开。
-接下来我们重点看下allowSingleTest的方法。
+isOpen���߼��������������֮���ǵ�ʧ���ʴ���ĳ����ֵ��ʱ���Ѷ�·���򿪡�
+�����������ص㿴��allowSingleTest�ķ�����
 ```
 public boolean allowSingleTest() {
             long timeCircuitOpenedOrWasLastTested = circuitOpenedOrLastTestedTime.get();
@@ -158,11 +159,11 @@ public boolean allowSingleTest() {
             return false;
         }
 ```
-逻辑很简单，就是在一定的时间窗口内只会放行一个请求。eg.
-在23:00 00.000的时间开启了断路器，假设断路器的时间窗口设置为100ms。则在23:00 00.000~23:00 00.100只会允许一个请求通过。
-这个主要是为了验证依赖服务是否已经恢复正常。
-#### 三、总结
-这篇文章主要简单分析了断路器的判断逻辑。接下来会重点分析下断路器的数据收集的逻辑实现(HystrixCommandMetrics)。另外hystirx大量用了命令模式的实现(rxjava)，这块逻辑也是里面理解起来比较费力的地方。
+�߼��ܼ򵥣�������һ����ʱ�䴰����ֻ�����һ������eg.
+��23:00 00.000��ʱ�俪���˶�·���������·����ʱ�䴰������Ϊ100ms������23:00 00.000~23:00 00.100ֻ������һ������ͨ����
+�����Ҫ��Ϊ����֤���������Ƿ��Ѿ��ָ�������
+#### �����ܽ�
+��ƪ������Ҫ�򵥷����˶�·�����ж��߼������������ص�����¶�·���������ռ����߼�ʵ��(HystrixCommandMetrics)������hystirx������������ģʽ��ʵ��(rxjava)������߼�Ҳ���������������ȽϷ����ĵط���
 
 
 
