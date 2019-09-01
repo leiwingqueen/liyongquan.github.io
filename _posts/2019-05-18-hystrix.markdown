@@ -1,17 +1,19 @@
 ---
 layout: post
-title:  "Hello, Jekyll"
-date:   2019-05-23 21:03:36 +0530
+title:  "Hystrix源码分析(一)"
+date:   2019-05-18 21:03:36 +800
 ---
 ##### 一、开篇
 hystix相信大家都不陌生。github地址：https://github.com/Netflix/Hystrix。中文名称翻译为刺猬，顾明思议是用来保护我们系统的。在分布式系统中可能会依赖很多服务，当依赖的服务出现异常，接口时延上涨，超时，很有可能会把上游业务的接口给拖死，把线程资源耗尽。我们需要一种机制对依赖服务的可用性做分析，如果依赖服务的失败率异常，能够做到类似保险丝的作用，把流量切断，避免产生更严重的故障。
 其中最核心的组建就是里面的断路器。我们主要分析两点：
+
 - 何时决定把断路器打开
 - 当依赖服务恢复的时候如何自动恢复
 ##### 二、源码分析
 ###### 1. 整体流程
-![整体流程.png](https://upload-images.jianshu.io/upload_images/14814047-8076b9e4cb3c42eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 我们借用hystrix wiki上的一张图来简单了解整个流程。本次关注的核心点是4,7。也就是断路器的实现逻辑。
+
 ###### 2. 断路器实现
 断路器的接口：HystrixCircuitBreaker
 ```
@@ -62,7 +64,6 @@ HystrixCircuitBreaker有两个实现类。分别是：
 - HystrixCircuitBreakerImpl
 默认实现类。本次分析的重点就是这个类。
 ###### 3. 调用栈
-![调用栈.png](https://upload-images.jianshu.io/upload_images/14814047-5bc66f678c4e0fa2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 我们重点看下applyHystrixSemantics这个方法。
 ```
     private Observable<R> applyHystrixSemantics(final AbstractCommand<R> _cmd) {
