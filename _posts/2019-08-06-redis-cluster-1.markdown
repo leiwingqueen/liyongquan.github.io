@@ -19,6 +19,7 @@ redis默认的内存管理包
 #### 二、配置
 ##### 1.redis配置文件
 这里只把核心修改的配置标出来。
+
 ```xml
 # Accept connections on the specified port, default is 6379 (IANA #815344).
 # If port 0 is specified Redis will not listen on a TCP socket.
@@ -69,6 +70,7 @@ cluster-config-file /usr/local/redis/conf/nodes_6381.conf
 #
 cluster-node-timeout 5000
 ```
+
 我们把配置拷贝6份，从6080~6085，一共6份配置，分别起6个redis实例
 ##### 2.集群配置
 redis-trib.rb命令已在新版本废弃，已统一使用redis-cli命令，我们尝试创建6个实例的redis集群，复制因子为1(一个从结点)。
