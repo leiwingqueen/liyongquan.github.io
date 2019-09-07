@@ -16,6 +16,7 @@ categories: redis 分布式
 redis cluster需要有ruby的环境
 - jemalloc
 redis默认的内存管理包
+
 #### 二、配置
 ##### 1.redis配置文件
 这里只把核心修改的配置标出来。
