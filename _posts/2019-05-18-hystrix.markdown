@@ -16,7 +16,7 @@ hystix相信大家都不陌生。github地址：https://github.com/Netflix/Hystrix。中文名称
 
 ###### 2. 断路器实现
 断路器的接口：HystrixCircuitBreaker
-```java
+```
 /**
  * Circuit-breaker logic that is hooked into {@link HystrixCommand} execution and will stop allowing executions if failures have gone past the defined threshold.
  * <p>
@@ -82,7 +82,7 @@ HystrixCircuitBreaker有两个实现类。分别是：
 ```
 通过断路器控制是否应该走正常的调用逻辑。
 ###### 4. 断路器判断逻辑
-```java
+```
 @Override
         public boolean allowRequest() {
             if (properties.circuitBreakerForceOpen().get()) {
