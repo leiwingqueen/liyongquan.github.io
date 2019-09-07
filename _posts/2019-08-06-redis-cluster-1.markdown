@@ -135,12 +135,12 @@ S: ebc2e194c8c77c3a62e6717bd9d4eacc327878ee 127.0.0.1:6383
 我们看到redis的16384个slot已经平均分配到3主3从的结点中，后面我们将重点了解下redis cluster的slot的分配算法。
 #### 四、测试
 我们简单做一个get set的测试，通过redis cli命令连接到集群，进行测试。
-![测试](images/14814047-f3914e9a886ef15d.png)
+![测试](https://github.com/liyongquan/liyongquan.github.io/tree/master/_posts/images/14814047-f3914e9a886ef15d.png)
 我们再尝试下redis集群的高可用，我们尝试把其中一段的slot主从结点都停掉，整个集群会变成不可用。
-![image.png](images/14814047-509860680b0d3b29.png)
+![image.png](https://github.com/liyongquan/liyongquan.github.io/tree/master/_posts/images/14814047-509860680b0d3b29.png)
 
 
-![image.png](images/14814047-24b380cb80b7d1f6.png)
+![image.png](https://github.com/liyongquan/liyongquan.github.io/tree/master/_posts/images/14814047-24b380cb80b7d1f6.png)
 
 
 
