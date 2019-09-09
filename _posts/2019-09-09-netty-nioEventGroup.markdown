@@ -8,6 +8,10 @@ categories: netty 分布式
 
 ###  一、什么是NioEventGroup
 
+netty的启动类中涉及到很重要的一个角色，EventLoopGroup。
+> Netty内部都是通过线程在处理各种数据，EventLoopGroup就是用来管理调度他们的，注册Channel，管理他们的生命周期
+
+
 ```java
 EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -31,14 +35,8 @@ EventLoopGroup bossGroup = new NioEventLoopGroup(1);
              });
 ```
 
-netty的启动类中涉及到很重要的一个角色，EventLoopGroup。
-
-> Netty内部都是通过线程在处理各种数据，EventLoopGroup就是用来管理调度他们的，注册Channel，管理他们的生命周期
-
 ### 二、如何构造一个NioEventLoopGroup
 
-
-类图如下：
 ![类图](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190909233444.png)
 
 MultithreadEventLoopGroup是NioEventLoopGroup的父类，通过跟踪源代码，我们可以发现构造函数的实现是在MultithreadEventLoopGroup中完成
