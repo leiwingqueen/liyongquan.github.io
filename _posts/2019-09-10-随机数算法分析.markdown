@@ -1,0 +1,11 @@
+---
+layout: post
+title:  "随机数算法分析"
+description: 随机数算法分析
+date:   2019-09-10 14:48:36 +0530
+categories: 算法 随机数
+---
+业界常用的随机算法，希望从实现原理分析一下一个简单随机算法使用的正确姿势
+- Random
+- ThreadLocalRandom
+- SecureRandom
