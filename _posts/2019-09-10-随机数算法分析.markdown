@@ -5,7 +5,97 @@ description: 随机数算法分析
 date:   2019-09-10 14:48:36 +0530
 categories: 算法 随机数
 ---
-业界常用的随机算法，希望从实现原理分析一下一个简单随机算法使用的正确姿势
+### 一、背景
+
+公司最近有一个项目需要使用到随机数，用户通过抽奖的方式获得奖品。
+
+```java
+public static int random(int min,int max){
+        Random r=new Random();
+        return  r.nextInt(max-min)+min;
+    }
+```
+
+逻辑很简单，就是产生[min,max)范围的随机数。这种实现问题是否会有问题？
+
+业界常用的随机算法，希望从实现原理分析一下一个简单随机算法使用的正确姿势。
+
 - Random
 - ThreadLocalRandom
 - SecureRandom
+
+
+
+### 二、Random
+
+首先我们要知道random是一个伪随机算法，并不是一个真正的随机算法。
+
+```java
+* If two instances of {@code Random} are created with the same
+ * seed, and the same sequence of method calls is made for each, they
+ * will generate and return identical sequences of numbers.
+```
+
+官方文档说明，如果两个Random的实例通过一个相同的seed构建，则会产生相同的数字序列。
+
+```java
+public Random() {
+        this(seedUniquifier() ^ System.nanoTime());
+    }
+
+    private static long seedUniquifier() {
+        // L'Ecuyer, "Tables of Linear Congruential Generators of
+        // Different Sizes and Good Lattice Structure", 1999
+        for (;;) {
+            long current = seedUniquifier.get();
+            long next = current * 181783497276652981L;
+            if (seedUniquifier.compareAndSet(current, next))
+                return next;
+        }
+    }
+```
+
+如果不指定初始化的seed，则会以当前的系统时间(精确到纳秒)来初始化seed。
+
+```java
+protected int next(int bits) {
+        long oldseed, nextseed;
+        AtomicLong seed = this.seed;
+        do {
+            oldseed = seed.get();
+            nextseed = (oldseed * multiplier + addend) & mask;
+        } while (!seed.compareAndSet(oldseed, nextseed));
+        return (int)(nextseed >>> (48 - bits));
+    }
+```
+
+生成随机数的过程本质上就是更新seed的过程。通过代码我们可以知道Random本身是线程安全的(通过CAS保证)
+
+
+
+所以我们再回到一开始讲到的业务代码，每次去new Random()会有问题吗？
+
+我们知道随机数算法是通过当前的seed来计算下一次的seed，如果每次去new一个实例，同一个时间点的中奖结果必然是一样的。
+
+另外Random保证的是单实例下的多次调用的概率分布的平衡，通过每次new一个实例是无法保证整个概率分布的合理性。
+
+我们尝试把代码修改为如下：
+
+```java
+private static final class RandomNumberGeneratorHolder {
+        static final Random randomNumberGenerator = new Random();
+    }
+
+public static int random(int min,int max){
+        return  RandomNumberGeneratorHolder.randomNumberGenerator.nextInt(max-min)+min;
+    }
+```
+
+保证在多线程环境下使用一个实例进行随机。
+
+然而在高并发环境下会由于需要对seed进行加锁而导致性能下降，因此考虑使用ThreadLocalRandom来解决性能的问题。
+
+
+
+### 三、ThreadLocalRandom
+
