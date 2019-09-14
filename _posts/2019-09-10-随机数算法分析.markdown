@@ -95,3 +95,102 @@ public static int random(int min,int max){
 
 #### ThreadLocalRandom
 
+由于Random类在多线程环境会共享同一个seed的变量，锁会导致随机数生成的性能下降。ThreadLocalRandom就是为了解决这个问题存在的。
+
+解决的思路是为每一个线程单独分配一个seed。
+
+我们先看下Thread的源码，保留了两个属性。
+
+```java
+/** The current seed for a ThreadLocalRandom */
+    @sun.misc.Contended("tlr")
+    long threadLocalRandomSeed;
+
+    /** Probe hash value; nonzero if threadLocalRandomSeed initialized */
+    @sun.misc.Contended("tlr")
+    int threadLocalRandomProbe;
+```
+
+- threadLocalRandomSeed
+
+  每个线程单独的种子
+
+- threadLocalRandomProbe
+
+  标志种子是否初始化，非0为初始化，0为未初始化。
+
+接下来看ThreadLocalRandom的current()方法。
+
+```java
+/**
+     * Returns the current thread's {@code ThreadLocalRandom}.
+     *
+     * @return the current thread's {@code ThreadLocalRandom}
+     */
+    public static ThreadLocalRandom current() {
+        if (UNSAFE.getInt(Thread.currentThread(), PROBE) == 0)
+            localInit();
+        return instance;
+    }
+    static final void localInit() {
+        int p = probeGenerator.addAndGet(PROBE_INCREMENT);
+        int probe = (p == 0) ? 1 : p; // skip 0
+        long seed = mix64(seeder.getAndAdd(SEEDER_INCREMENT));
+        Thread t = Thread.currentThread();
+        UNSAFE.putLong(t, SEED, seed);
+        UNSAFE.putInt(t, PROBE, probe);
+    }
+    
+```
+
+主要为了初始化Thread的threadLocalRandomSeed和threadLocalRandomProbe两个属性。在初始化的过程中并不是简单地通过获取线程的属性进行更新，而是通过unsafe(JNI)的方式进行。SEED和PROBE分别是这两个属性的偏移量。
+
+另外初始化的种子为seeder增加一个常量来初始化。seeder为静态变量，但是只有在初始化的时候才会使用到，所以对性能影响不大。
+
+```java
+// We must define this, but never use it.
+    protected int next(int bits) {
+        return (int)(mix64(nextSeed()) >>> (64 - bits));
+    }
+final long nextSeed() {
+        Thread t; long r; // read and update per-thread seed
+        UNSAFE.putLong(t = Thread.currentThread(), SEED,
+                       r = UNSAFE.getLong(t, SEED) + GAMMA);
+        return r;
+    }
+```
+
+生成的随机数的方法跟Random类似，通过获取当前的seed按照一定的算法规则进行更新，并返回给调用方。
+
+#### SecureRandom
+
+在看ThreadLocalRandom源码的时候，我们发现在初始化seed的方法里面有使用到SecureRandom的方法。我们回想一下，如果初始化的种子被破解，那么其实整个随机序列都会被得知，而初始化的种子如果是完全依赖服务器时间的话，用户可以在某个时间点上操作来控制整个随机算法。
+
+SecureRandom来保证初始化的种子更难以被猜测。
+
+```java
+private static long initialSeed() {
+        String pp = java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction(
+                        "java.util.secureRandomSeed"));
+        if (pp != null && pp.equalsIgnoreCase("true")) {
+            byte[] seedBytes = java.security.SecureRandom.getSeed(8);
+            long s = (long)(seedBytes[0]) & 0xffL;
+            for (int i = 1; i < 8; ++i)
+                s = (s << 8) | ((long)(seedBytes[i]) & 0xffL);
+            return s;
+        }
+        return (mix64(System.currentTimeMillis()) ^
+                mix64(System.nanoTime()));
+    }
+```
+
+
+
+
+
+参考文献：
+
+[并发包中ThreadLocalRandom类原理浅尝](https://yq.aliyun.com/articles/599187)
+
+[sun.misc.Unsafe的理解](https://yq.aliyun.com/articles/372813)
