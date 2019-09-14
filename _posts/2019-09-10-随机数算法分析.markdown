@@ -5,7 +5,7 @@ description: 随机数算法分析
 date:   2019-09-10 14:48:36 +0530
 categories: 算法 随机数
 ---
-### 一、背景
+#### 一、背景
 
 公司最近有一个项目需要使用到随机数，用户通过抽奖的方式获得奖品。
 
@@ -24,9 +24,7 @@ public static int random(int min,int max){
 - ThreadLocalRandom
 - SecureRandom
 
-
-
-### 二、Random
+#### 二、Random
 
 首先我们要知道random是一个伪随机算法，并不是一个真正的随机算法。
 
@@ -97,5 +95,5 @@ public static int random(int min,int max){
 
 
 
-### 三、ThreadLocalRandom
+#### 三、ThreadLocalRandom
 
