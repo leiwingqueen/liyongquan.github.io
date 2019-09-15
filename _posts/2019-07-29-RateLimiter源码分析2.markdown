@@ -1,24 +1,25 @@
 ---
 layout: post
-title:  "RateLimiter-Ô´Âë·ÖÎö2"
-description: RateLimiter-Ô´Âë·ÖÎö2
+title:  "RateLimiter-æºç åˆ†æ2"
+description: RateLimiter-æºç åˆ†æ2
 date:   2019.07.29 22:37:56 +0530
-categories: ·Ö²¼Ê½ ÏŞÁ÷ RateLimiter
+categories: åˆ†å¸ƒå¼ é™æµ RateLimiter
 ---
-####  Ò»¡¢Ç°ÑÔ
-ÉÏÒ»Æª½áÎ²µÄÊ±ºòÎÒÌáÁËÁ½¸öÎÊÌâ£¬ÕâÒ»´ÎÖ÷ÒªÕë¶ÔÕâÁ½¸öÎÊÌâ½øĞĞË¼¿¼ºÍÌÖÂÛ¡£
-![ticket¸üĞÂ](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190915094151.png)
+####  ä¸€ã€å‰è¨€
+ä¸Šä¸€ç¯‡ç»“å°¾çš„æ—¶å€™æˆ‘æäº†ä¸¤ä¸ªé—®é¢˜ï¼Œè¿™ä¸€æ¬¡ä¸»è¦é’ˆå¯¹è¿™ä¸¤ä¸ªé—®é¢˜è¿›è¡Œæ€è€ƒå’Œè®¨è®ºã€‚
+![ticketæ›´æ–°](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190915094151.png)
 
-- ÎÊÌâ1
-ÕâÀïµÄreturnValueÎªÊ²Ã´²»ÊÇÖ±½Ó·µ»ØnextFreeTicketMicros£¬¶øÊÇÖ±½Ó»ñÈ¡nextFreeTicketMicros¸üĞÂÇ°µÄÖµ£¿
-- ÎÊÌâ2
-Èç¹ûtimeoutÉèÖÃÎª0£¬µ«ÊÇ´æÁ¿µÄticket²»×ãµÄÇé¿öÏÂ£¬ĞèÒªfreshPermitsÀ´Ìî³ä£¬ÄÇÃ´×îÖÕ²»ÊÇÒ²»ásleepÂğ£¿
-#### ¶ş¡¢´úÂë²âÊÔ
-![Ôö¼ÓÈÕÖ¾](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190915095032.png)
-ÎÒ³¢ÊÔÔÚsleepÖ®Ç°Ôö¼ÓÒ»ÌõÈÕÖ¾£¬ÓÃÓÚ¹Û²ì³ÌĞòË¯ÃßµÄÊ±¼ä¡£
-¼òµ¥±àĞ´Ò»¸ö²âÊÔÀàÓÃÓÚ²âÊÔticket²»×ãµÄ³¡¾°¡£
+- é—®é¢˜1
+è¿™é‡Œçš„returnValueä¸ºä»€ä¹ˆä¸æ˜¯ç›´æ¥è¿”å›nextFreeTicketMicrosï¼Œè€Œæ˜¯ç›´æ¥è·å–nextFreeTicketMicrosæ›´æ–°å‰çš„å€¼ï¼Ÿ
+- é—®é¢˜2
+å¦‚æœtimeoutè®¾ç½®ä¸º0ï¼Œä½†æ˜¯å­˜é‡çš„ticketä¸è¶³çš„æƒ…å†µä¸‹ï¼Œéœ€è¦freshPermitsæ¥å¡«å……ï¼Œé‚£ä¹ˆæœ€ç»ˆä¸æ˜¯ä¹Ÿä¼šsleepå—ï¼Ÿ
 
-```
+#### äºŒã€ä»£ç æµ‹è¯•
+![å¢åŠ æ—¥å¿—](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190915095032.png)
+æˆ‘å°è¯•åœ¨sleepä¹‹å‰å¢åŠ ä¸€æ¡æ—¥å¿—ï¼Œç”¨äºè§‚å¯Ÿç¨‹åºç¡çœ çš„æ—¶é—´ã€‚
+ç®€å•ç¼–å†™ä¸€ä¸ªæµ‹è¯•ç±»ç”¨äºæµ‹è¯•ticketä¸è¶³çš„åœºæ™¯ã€‚
+
+```java
 public static void main(String[] args) {
     RateLimiter rateLimiter=RateLimiter.create(5);
     for(int i=0;i<5;i++) {
@@ -27,8 +28,8 @@ public static void main(String[] args) {
     }
   }
 ```
-×îÖÕÔËĞĞµÄ½á¹û£º
-```
+æœ€ç»ˆè¿è¡Œçš„ç»“æœï¼š
+```java
 sleep0ms...
 result:true
 result:false
@@ -38,13 +39,14 @@ result:false
 
 Process finished with exit code 0
 ```
-ÎÒÃÇ¿ÉÒÔÖªµÀ
-- µ±ÓĞ¿ÉÓÃticket£¬µ«ÊÇticket²»×ãµÄÊ±ºò»á·µ»Ø³É¹¦£¬²¢ÇÒ²»»ásleep
-- ²»×ãµÄticket»á¸üĞÂÏÂÒ»´ÎµÄnextFreeTicketMicros£¬µ¼ÖÂÏÂÒ»´ÎtryAcquireÊ§°Ü¡£Èç²âÊÔÓÃÀıËùÊ¾£¬nextFreeTicketMicros»áĞŞ¸ÄÎª2sºó(10/5=2)¡£
+æˆ‘ä»¬å¯ä»¥çŸ¥é“
+- å½“æœ‰å¯ç”¨ticketï¼Œä½†æ˜¯ticketä¸è¶³çš„æ—¶å€™ä¼šè¿”å›æˆåŠŸï¼Œå¹¶ä¸”ä¸ä¼šsleep
+- ä¸è¶³çš„ticketä¼šæ›´æ–°ä¸‹ä¸€æ¬¡çš„nextFreeTicketMicrosï¼Œå¯¼è‡´ä¸‹ä¸€æ¬¡tryAcquireå¤±è´¥ã€‚å¦‚æµ‹è¯•ç”¨ä¾‹æ‰€ç¤ºï¼ŒnextFreeTicketMicrosä¼šä¿®æ”¹ä¸º2så(10/5=2)ã€‚
 
-ÎÒÃÇÔÙÀ´×Ü½áÏÂ£¬Ö»ÒªÄãÊÖÍ·ÉÏÖÁÉÙÓĞÒ»¸öticket(µ±Ç°Ê±¼ä>=nextFreeTicketMicros)£¬²»¹ÜÇëÇóÕßÊÇĞèÒª¶àÉÙ¸öticket£¬ÎÒÃÇ¶¼Ò»²¢Âú×ã¸øËû£¬·µ»Øtrue£¬²¢ÇÒ°Ñticket¸üĞÂÎª¸ºÊı(Íùºó¸üĞÂnextFreeTicketMicros)¡£µ«ÊÇÕâÖÖÄ£Ê½ºóÃæÀ´µÄÈË¾ÍÔâÑêÁË£¬¼ÙÈçÇ°ÃæÒ»¸öÓÃ»§ÉêÇëÁËºÜ¶àticket£¬ÄÇÃ´ºóÀ´ÕßĞèÒªµÈ´ıºÜ³¤µÄÊ±¼ä²ÅÄÜÉêÇëµ½Ò»¸öticket¡£
-#### ËÄ¡¢×Ü½á
-RateLimiterµÄSmoothBurstyÊµÏÖÎÒÃÇÒÑ¾­´óÖÂÌÖÂÛÍêÁË£¬¿ÉÒÔ¿´µÃ³öÀ´ÆäÊµSmoothBurstyµÄÊµÏÖ»á´æÔÚÒ»Ğ©±×¶Ë£¬±ÈÈçËµ¿ÉÄÜ»á³öÏÖ±È½ÏÑÏÖØµÄÍ»´ÌÁ÷Á¿£¬ÁíÍâÒ»¸öÊµÏÖÀàSmoothWarmingUpÊÇ·ñÄÜ±È½ÏºÃµØ½â¾öÕâ²¿·ÖÎÊÌâ£¿Õâ¸öÓĞ´ıÌÖÂÛ
+æˆ‘ä»¬å†æ¥æ€»ç»“ä¸‹ï¼Œåªè¦ä½ æ‰‹å¤´ä¸Šè‡³å°‘æœ‰ä¸€ä¸ªticket(å½“å‰æ—¶é—´>=nextFreeTicketMicros)ï¼Œä¸ç®¡è¯·æ±‚è€…æ˜¯éœ€è¦å¤šå°‘ä¸ªticketï¼Œæˆ‘ä»¬éƒ½ä¸€å¹¶æ»¡è¶³ç»™ä»–ï¼Œè¿”å›trueï¼Œå¹¶ä¸”æŠŠticketæ›´æ–°ä¸ºè´Ÿæ•°(å¾€åæ›´æ–°nextFreeTicketMicros)ã€‚ä½†æ˜¯è¿™ç§æ¨¡å¼åé¢æ¥çš„äººå°±é­æ®ƒäº†ï¼Œå‡å¦‚å‰é¢ä¸€ä¸ªç”¨æˆ·ç”³è¯·äº†å¾ˆå¤šticketï¼Œé‚£ä¹ˆåæ¥è€…éœ€è¦ç­‰å¾…å¾ˆé•¿çš„æ—¶é—´æ‰èƒ½ç”³è¯·åˆ°ä¸€ä¸ªticketã€‚
+
+#### å››ã€æ€»ç»“
+RateLimiterçš„SmoothBurstyå®ç°æˆ‘ä»¬å·²ç»å¤§è‡´è®¨è®ºå®Œäº†ï¼Œå¯ä»¥çœ‹å¾—å‡ºæ¥å…¶å®SmoothBurstyçš„å®ç°ä¼šå­˜åœ¨ä¸€äº›å¼Šç«¯ï¼Œæ¯”å¦‚è¯´å¯èƒ½ä¼šå‡ºç°æ¯”è¾ƒä¸¥é‡çš„çªåˆºæµé‡ï¼Œå¦å¤–ä¸€ä¸ªå®ç°ç±»SmoothWarmingUpæ˜¯å¦èƒ½æ¯”è¾ƒå¥½åœ°è§£å†³è¿™éƒ¨åˆ†é—®é¢˜ï¼Ÿè¿™ä¸ªæœ‰å¾…è®¨è®º
 
 
 
