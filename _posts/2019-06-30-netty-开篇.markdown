@@ -1,0 +1,115 @@
+---
+layout: post
+title:  "netty-开篇"
+description: netty-开篇
+date:   2019.06.30 00:54:21 +0000
+categories: 分布式 netty
+---
+#### 一、什么是netty？
+> Netty 是一个利用 Java 的高级网络的能力，隐藏其背后的复杂性而提供一个易于使用的 API 的客户端/服务器框架。
+Netty 是一个广泛使用的 Java 网络编程框架（Netty 在 2011 年获得了Duke's Choice Award，见[https://www.java.net/dukeschoice/2011](https://www.java.net/dukeschoice/2011)）。它活跃和成长于用户社区，像大型公司 Facebook 和 Instagram 以及流行 开源项目如 Infinispan, HornetQ, Vert.x, Apache Cassandra 和 Elasticsearch 等，都利用其强大的对于网络抽象的核心代码。
+
+
+#### 二、为什么我们需要netty
+
+![传统的阻塞式IO](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190915210636.png)
+tomcat是阻塞IO的一个经典的案例(旧版本，新版本已经有NIO的支持)。对于每一个客户端的请求，我们都会生成一个单独的线程去进行处理。所谓的单请求单线程的模式。这种模式的优点是简单，但是请求的并发实际上受限于并发的线程数。另外在开启一个线程的时候并不能保证请求的报文都已经完整接收到，所以从请求发起到请求接收完成，工作线程会处于一个等待的状态，在这个过程中线程的切换也会额外增加系统的负担。
+
+![非阻塞式IO](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190915210750.png)
+NIO的模式最大的改动点是引入了一个selector的角色，selector负责把每个连接的请求收集，只有当请求收集完成才会交给工作线程处理。
+
+netty也是基于JAVA的NIO基础上做封装，令NIO更加易用。当然实现了NIO的不止netty，不过我们可以通过netty来了解NIO的一些概念和细节。
+#### 三、代码
+去github把netty的源码下载，我这里用的分支是4.1的分支。
+先尝试把一个最简单的DEMO给起来。
+```java
+public final class LocalEcho {
+
+    static final String PORT = System.getProperty("port", "test_port");
+
+    public static void main(String[] args) throws Exception {
+        // Address to bind on / connect to.
+        final LocalAddress addr = new LocalAddress(PORT);
+
+        EventLoopGroup serverGroup = new DefaultEventLoopGroup();
+        EventLoopGroup clientGroup = new NioEventLoopGroup(); // NIO event loops are also OK
+        try {
+            // Note that we can use any event loop to ensure certain local channels
+            // are handled by the same event loop thread which drives a certain socket channel
+            // to reduce the communication latency between socket channels and local channels.
+            ServerBootstrap sb = new ServerBootstrap();
+            sb.group(serverGroup)
+              .channel(LocalServerChannel.class)
+              .handler(new ChannelInitializer<LocalServerChannel>() {
+                  @Override
+                  public void initChannel(LocalServerChannel ch) throws Exception {
+                      ch.pipeline().addLast(new LoggingHandler(LogLevel.WARN));
+                  }
+              })
+              .childHandler(new ChannelInitializer<LocalChannel>() {
+                  @Override
+                  public void initChannel(LocalChannel ch) throws Exception {
+                      ch.pipeline().addLast(
+                              new LoggingHandler(LogLevel.WARN),
+                              new LocalEchoServerHandler());
+                  }
+              });
+
+            Bootstrap cb = new Bootstrap();
+            cb.group(clientGroup)
+              .channel(LocalChannel.class)
+              .handler(new ChannelInitializer<LocalChannel>() {
+                  @Override
+                  public void initChannel(LocalChannel ch) throws Exception {
+                      ch.pipeline().addLast(
+                              new LoggingHandler(LogLevel.WARN),
+                              new LocalEchoClientHandler());
+                  }
+              });
+
+            // Start the server.
+            sb.bind(addr).sync();
+
+            // Start the client.
+            Channel ch = cb.connect(addr).sync().channel();
+
+            // Read commands from the stdin.
+            System.out.println("Enter text (quit to end)");
+            ChannelFuture lastWriteFuture = null;
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+            for (;;) {
+                String line = in.readLine();
+                if (line == null || "quit".equalsIgnoreCase(line)) {
+                    break;
+                }
+
+                // Sends the received line to the server.
+                lastWriteFuture = ch.writeAndFlush(line);
+            }
+
+            // Wait until all messages are flushed before closing the channel.
+            if (lastWriteFuture != null) {
+                lastWriteFuture.awaitUninterruptibly();
+            }
+        } finally {
+            serverGroup.shutdownGracefully();
+            clientGroup.shutdownGracefully();
+        }
+    }
+}
+```
+这个DEMO的server端只是简单地把请求的内容原样返回。这里涉及到几个概念。
+- EventLoopGroup
+
+- Handler
+
+- channel
+
+- pipeline
+
+  
+
+  这几个重要的概念后面会专门来对其进行分析。
+
+
+
