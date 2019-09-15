@@ -169,6 +169,7 @@ public class ConsistentHash<T> {
 逻辑很简单，核心关注几点：
 - hash算法的实现
 - 虚拟结点的数量如何维护
+
 circle
 - 一个key如何定义存放在哪个虚拟结点？
 public T get(Object key)，取顺时针最近的结点
@@ -184,7 +185,6 @@ circle.put(hashFunction.hash(node.toString() + i), node);其中i是第i个虚拟
 
 
 #### 参考文献
-源码分析
-https://www.cnblogs.com/hapjin/p/4737207.html
-图解
-https://blog.csdn.net/cywosp/article/details/23397179
+
+[源码分析](https://www.cnblogs.com/hapjin/p/4737207.html)
+[图解](https://blog.csdn.net/cywosp/article/details/23397179)
