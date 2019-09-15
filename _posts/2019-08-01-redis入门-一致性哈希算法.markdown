@@ -23,12 +23,13 @@ categories: redis 分布式 一致性哈希
 这篇文章介绍得很清楚，所以这里就不再重复了。这里只提一点：
 虚拟结点的作用：
 物理结点普遍的数量不会很多，如果直接以物理结点作为hash，很有可能数据分布会很不均匀，因此这里引入虚拟结点希望把结点的数据增加，最终达到一个尽可能平衡的状态。
+
 - 那么实际redis的虚拟结点复制数量是多少？如何定义一个合理的复制数量
 - 新增结点的时候如何把这个新的结点信息同步到各个客户端？这里又会涉及到数据同步的问题，客户端同步到新结点的数据，但是redis的key还没进行迁移，怎么办？
 
 #### 四、源码
 HashFunction.java
-```
+```java
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -59,7 +60,7 @@ public class HashFunction {
 }
 ```
 ConsistentHash.java
-```
+```java
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
