@@ -11,6 +11,7 @@ categories: 分布式 限流 RateLimiter
 - 降级
 - 熔断
 我们先对限流来进行一个分析。
+
 ### 二、限流的实现
 业界常用的限流的实现方式也有多种，我尝试做一个简单的总结：
 - 计数器
@@ -26,6 +27,7 @@ categories: 分布式 限流 RateLimiter
 
 漏桶算法 和 令牌桶算法 最大的区别：
 - 漏桶算法的处理的流量必然是匀速的，但是令牌桶算法是允许有一定的突刺流量(取决于桶的最大大小)
+
 ### 三、RateLimiter的创建
 guawa的RateLimiter就是使用令牌桶算法实现的。
 > RateLimiter
@@ -152,6 +154,7 @@ queryEarliestAvailable这里返回的是下一个空闲的ticket产生的时间(
 这里的意思是，如果当前时间+等待的超时时间都比下一个空闲token产生的时间要早，则直接认为获取token失败，因为即使等待超时，也必然获取不到token。
 - reserveAndGetWaitLength
 更新并获取ticket，并sleep一定时间，返回给调用方。下面重点介绍这个方法。
+
 ### 五、更新ticket
 ```java
 /**
@@ -212,9 +215,9 @@ freshPermits：存量ticket不足，需要额外申请的ticket
 等待时间计算，storedPermitsToWaitTime的SmoothBursty实现直接返回0，freshPermits * stableIntervalMicros为额外需要等待的毫秒数。
 
 ![ticket更新](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190915094151.png)
-问题1：
+- 问题1：
 这里的returnValue为什么不是直接返回nextFreeTicketMicros，而是直接获取nextFreeTicketMicros更新前的值？
-问题2：
+- 问题2：
 如果timeout设置为0，但是存量的ticket不足的情况下，需要freshPermits来填充，那么最终不是也会sleep吗？
 
 ### 五、总结
