@@ -174,7 +174,11 @@ circle
 public T get(Object key)，取顺时针最近的结点
 - 虚拟结点和物理结点如何映射？
 circle.put(hashFunction.hash(node.toString() + i), node);其中i是第i个虚拟结点
+
+
+
 #### 五、总结
+
 后面把redis的核心源码捞出来好好读读，尽量对redis和redis cluster有一个更深刻的认识。
 
 
