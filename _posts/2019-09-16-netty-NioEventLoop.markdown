@@ -114,7 +114,7 @@ TaskQueue的出队。
 
 ![出队逻辑](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190916233258.png)
 
-  ### 总结
+### 总结
 
 本次先对NioEventLoop有个大致地了解，后面再深入对里面的细节进行分析。
 
