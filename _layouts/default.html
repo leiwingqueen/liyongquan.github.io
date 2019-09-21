@@ -1,34 +1,56 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-	{%- include head.html -%}
-</head>
+{% include head.html %}
 <body>
-	<main class="container">
-		<section class="about">
-			<img src="{{ "/assets/portfolio.jpg" | relative_url }}" alt="{{ site.plainwhite.name }}">
-			<h2>{{ site.plainwhite.name }}</h2>
-			<p class="tagline">{{ site.plainwhite.tagline }}</p>
-			<ul class="social">
-				<a href="https://github.com/{{ site.plainwhite.social_links.github }}"><li><i class="icon-github-circled"></i></li></a>
-				<a href="https://www.linkedin.com/{{ site.plainwhite.social_links.linkedIn }}"><li><i class="icon-linkedin-squared"></i></li></a>
-				<a href="https://twitter.com/{{ site.plainwhite.social_links.twitter }}"><li><i class="icon-twitter-squared"></i></li></a>
-			</ul>
-			<p>&copy; 2019</p>
-		</section>
-		<section class="content">
-			{{ content }}
-		</section>
-	</main>
-	{%- if site.plainwhite.analytics_id -%}
-	<script async src="https://www.googletagmanager.com/gtag/js?id={{ site.plainwhite.analytics_id }}"></script>
-	<script>
-		window.dataLayer = window.dataLayer || [];
-		function gtag() { dataLayer.push(arguments); }
-		gtag('js', new Date());
+	{% include header.html %}
+	<div class="container">
 
-		gtag('config', '{{ site.plainwhite.analytics_id }}');
-	</script>
-	{%- endif -%}
+	{% if page.id %}
+	<p>
+		<strong>{{ page.published | date: '%B %d, %Y' }}</strong> ( last updated : {{ page.date | date: '%B %d, %Y' }} )
+		<br>
+		{% for tag in page.tags %}
+			<a class="label label-default" href="/tags/#{{ tag | slugify }}">{{ tag }}</a>
+		{% endfor %}
+    </p>
+	{%if page.github %}
+	<p>
+    	<a href="{{ page.github }}" class="btn btn-default">
+		    <i class="fa fa-github fa-2x"></i>  {{ page.github }}
+			</a>
+	</p>
+	{% endif %}
+	<hr>
+	<h1>Abstract</h1>
+	{% endif %}
+
+	{{ content }}
+
+
+	{% if page.id %}
+	<p>Originally published {{ page.published | date: '%B %d, %Y' }}
+    <br> Latest update {{ page.date | date: '%B %d, %Y' }}</p>
+
+    <p><strong>Related posts :</strong></p>
+        <ul>
+	    {% for allpost in site.posts %}
+			  {% for tag in page.tags %}
+			  {% if allpost.tags contains tag and allpost.id != page.id %}
+			  <li>
+			      <a href="{{ allpost.url }}">
+			        {{ allpost.title }}
+			      </a>
+			  </li>
+			  {% break %}
+			  {% endif %}
+			  {% endfor %}
+		{% endfor %}
+		</ul>
+	{% endif %}
+
+	{% include disqus.html %}
+	</div>
+	{% include footer.html %}
+	{% include analytics.html %}
 </body>
 </html>
