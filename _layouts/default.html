@@ -12,5 +12,23 @@
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
     <script src="{{ "/assets/js/prism.js" | relative_url }}"></script>
     <script src="{{ "/assets/js/index.min.js" | relative_url }}"></script>
+	{%- if site.mermaid_enable -%}
+	<script type="text/javascript" src="/assets/js/mermaid.min.js"></script>
+	<script type="text/javascript">
+	  (function(){
+		// Initial mermaid
+		mermaid.init({startOnLoad:true}, "pre code.language-mermaid", function(){
+		  // Change <pre> and <code> block style
+		  var codeBlock = document.querySelector('code.language-mermaid');
+		  var preBlock = codeBlock.parentNode;
+
+		  codeBlock.style.backgroundColor = 'initial';
+		  preBlock.style.border = 'none';
+		  preBlock.style.textAlign = 'center';
+		  preBlock.style.backgroundColor = 'initial';
+		});
+	  })()
+	</script>
+	{%- endif -%}
 </body>
 </html>

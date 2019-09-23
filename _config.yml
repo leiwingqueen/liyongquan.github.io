@@ -85,3 +85,6 @@ permalink: /:year/:month/:day/:title.html
 
 # Plugins
 plugins: [jekyll-paginate]
+
+#mermaid支持
+mermaid_enable: true
