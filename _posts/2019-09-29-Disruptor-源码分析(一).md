@@ -71,8 +71,9 @@ public enum ProducerType
 使用哪个模式取决你的生产者到底是单线程还是多线程。多线程的模式在预分配的过程中会使用CAS来保证数据的一致性(同一个槽不会被不同的生产者占用)
 
 WaitStrategy--消费者等待策略。一旦消费者的处理速度比生产者快，消费者所采用的等待策略
-等待策略|措施|适用场景
--|-|-
+
+等待策略 | 措施 | 适用场景
+- | - | -
 BlockingWaitStrategy | 加锁 | CPU资源紧缺，吞吐量和延迟并不重要的场景
 BusySpinWaitStrategy | 自旋 | 通过不断重试，减少切换线程导致的系统调用，而降低延迟。推荐在线程绑定到固定的CPU的场景下使用
 PhasedBackoffWaitStrategy | 自旋 + yield + 自定义策略 | CPU资源紧缺，吞吐量和延迟并不重要的场景
@@ -82,9 +83,11 @@ YieldingWaitStrategy | 自旋 + yield + 自旋 | 性能和CPU资源之间有很�
 
 具体的等待策略的源码暂时不在这里做分析
 
-创建RingBuffter，disruptor适用的一个环状缓冲结构。
+创建RingBuffter，disruptor适用的一个环状缓冲结构。RingBuffer有一个很核心的组件sequencer。多生产者模式和单生产者模式的主要区别就是在这里。我们先在脑海里记得有这么个组件，它的主要作用后面再进行分析。
 
+![sequencer类图](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190930000518.png)
 
+![RingBuffer类图](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190930001040.png)
 
 ### 参考文献
 
