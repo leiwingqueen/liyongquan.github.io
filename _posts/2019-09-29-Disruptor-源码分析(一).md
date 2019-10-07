@@ -89,6 +89,81 @@ YieldingWaitStrategy | 自旋 + yield + 自旋 | 性能和CPU资源之间有很�
 
 ![RingBuffer类图](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20190930001040.png)
 
+### 生产者
+
+我们先关注最简单的单生产者的模式。下面的方法是最常用的，把参数arg0转化成泛型E，然后写入到队列。
+
+RingBuffer.java
+
+```java
+/**
+     * @see com.lmax.disruptor.EventSink#publishEvent(com.lmax.disruptor.EventTranslatorOneArg, Object)
+     * com.lmax.disruptor.EventSink#publishEvent(com.lmax.disruptor.EventTranslatorOneArg, A)
+     */
+    @Override
+    public <A> void publishEvent(EventTranslatorOneArg<E, A> translator, A arg0)
+    {
+        final long sequence = sequencer.next();
+        translateAndPublish(translator, sequence, arg0);
+    }
+
+```
+
+调用关系图
+
+```mermaid
+graph LR
+Disruptor-->RingBuffer
+RingBuffer-->sequencer
+RingBuffer--entries-空间预分配-->RingBuffer
+sequencer-->next-获取队列的序号
+sequencer-->publish-更新队列头尾指针
+
+```
+
+何如获取RingBuffer下一个槽的序号？
+
+```java
+/**
+     * @see Sequencer#next(int)
+     */
+    @Override
+    public long next(int n)
+    {
+        if (n < 1)
+        {
+            throw new IllegalArgumentException("n must be > 0");
+        }
+
+        long nextValue = this.nextValue;
+
+        long nextSequence = nextValue + n;
+        long wrapPoint = nextSequence - bufferSize;
+        long cachedGatingSequence = this.cachedValue;
+
+        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue)
+        {
+            cursor.setVolatile(nextValue);  // StoreLoad fence
+
+            long minSequence;
+            while (wrapPoint > (minSequence = Util.getMinimumSequence(gatingSequences, nextValue)))
+            {
+                LockSupport.parkNanos(1L); // TODO: Use waitStrategy to spin?
+            }
+
+            this.cachedValue = minSequence;
+        }
+
+        this.nextValue = nextSequence;
+
+        return nextSequence;
+    }
+```
+
+对于单生产者来说，只需要针对nextValue进行自增。
+
+
+
 ### 参考文献
 
 [高性能队列——Disruptor](https://tech.meituan.com/2016/11/18/disruptor.html)
