@@ -160,7 +160,233 @@ sequencer-->publish-更新队列头尾指针
     }
 ```
 
-对于单生产者来说，只需要针对nextValue进行自增。
+对于单生产者来说，只需要针对nextValue进行自增。注意单生产者没有对nextValue进行加锁，如果是多生产者的模式则需要对nextValue用CAS的方式保证nextValue的线程安全。
+
+我们增加一个单元测试来关注sequencer的属性变化。
+
+```java
+@Test
+    public void next(){
+        SingleProducerSequencer sequencer = new SingleProducerSequencer(16, new BusySpinWaitStrategy());
+        for (int i = 0; i < 32; i++){
+            long next = sequencer.next();
+            sequencer.publish(next);
+            System.out.println("cursor:"+sequencer.cursor);
+            System.out.println("nextValue:"+sequencer.nextValue);
+            System.out.println("wrapPoint:"+(sequencer.nextValue-sequencer.bufferSize));
+            System.out.println("cachedValue:"+sequencer.cachedValue);
+            String values="";
+            for(Sequence sequence:sequencer.gatingSequences){
+                values+=sequence.get()+",";
+            }
+            System.out.println("gatingSequences:"+values);
+            System.out.println();
+        }
+    }
+```
+
+```
+cursor:0
+nextValue:0
+wrapPoint:-16
+cachedValue:-1
+gatingSequences:
+
+cursor:1
+nextValue:1
+wrapPoint:-15
+cachedValue:-1
+gatingSequences:
+
+cursor:2
+nextValue:2
+wrapPoint:-14
+cachedValue:-1
+gatingSequences:
+
+cursor:3
+nextValue:3
+wrapPoint:-13
+cachedValue:-1
+gatingSequences:
+
+cursor:4
+nextValue:4
+wrapPoint:-12
+cachedValue:-1
+gatingSequences:
+
+cursor:5
+nextValue:5
+wrapPoint:-11
+cachedValue:-1
+gatingSequences:
+
+cursor:6
+nextValue:6
+wrapPoint:-10
+cachedValue:-1
+gatingSequences:
+
+cursor:7
+nextValue:7
+wrapPoint:-9
+cachedValue:-1
+gatingSequences:
+
+cursor:8
+nextValue:8
+wrapPoint:-8
+cachedValue:-1
+gatingSequences:
+
+cursor:9
+nextValue:9
+wrapPoint:-7
+cachedValue:-1
+gatingSequences:
+
+cursor:10
+nextValue:10
+wrapPoint:-6
+cachedValue:-1
+gatingSequences:
+
+cursor:11
+nextValue:11
+wrapPoint:-5
+cachedValue:-1
+gatingSequences:
+
+cursor:12
+nextValue:12
+wrapPoint:-4
+cachedValue:-1
+gatingSequences:
+
+cursor:13
+nextValue:13
+wrapPoint:-3
+cachedValue:-1
+gatingSequences:
+
+cursor:14
+nextValue:14
+wrapPoint:-2
+cachedValue:-1
+gatingSequences:
+
+cursor:15
+nextValue:15
+wrapPoint:-1
+cachedValue:-1
+gatingSequences:
+
+cursor:16
+nextValue:16
+wrapPoint:0
+cachedValue:15
+gatingSequences:
+
+cursor:17
+nextValue:17
+wrapPoint:1
+cachedValue:15
+gatingSequences:
+
+cursor:18
+nextValue:18
+wrapPoint:2
+cachedValue:15
+gatingSequences:
+
+cursor:19
+nextValue:19
+wrapPoint:3
+cachedValue:15
+gatingSequences:
+
+cursor:20
+nextValue:20
+wrapPoint:4
+cachedValue:15
+gatingSequences:
+
+cursor:21
+nextValue:21
+wrapPoint:5
+cachedValue:15
+gatingSequences:
+
+cursor:22
+nextValue:22
+wrapPoint:6
+cachedValue:15
+gatingSequences:
+
+cursor:23
+nextValue:23
+wrapPoint:7
+cachedValue:15
+gatingSequences:
+
+cursor:24
+nextValue:24
+wrapPoint:8
+cachedValue:15
+gatingSequences:
+
+cursor:25
+nextValue:25
+wrapPoint:9
+cachedValue:15
+gatingSequences:
+
+cursor:26
+nextValue:26
+wrapPoint:10
+cachedValue:15
+gatingSequences:
+
+cursor:27
+nextValue:27
+wrapPoint:11
+cachedValue:15
+gatingSequences:
+
+cursor:28
+nextValue:28
+wrapPoint:12
+cachedValue:15
+gatingSequences:
+
+cursor:29
+nextValue:29
+wrapPoint:13
+cachedValue:15
+gatingSequences:
+
+cursor:30
+nextValue:30
+wrapPoint:14
+cachedValue:15
+gatingSequences:
+
+cursor:31
+nextValue:31
+wrapPoint:15
+cachedValue:15
+gatingSequences:
+
+
+Process finished with exit code 0
+```
+
+wrapPoint相当于RingBuffer的头指针
+
+cursor相当于RingBuffer的尾指针
+
+
 
 
 
