@@ -121,6 +121,8 @@ sequencer-->publish-更新队列头尾指针
 
 ```
 
+![](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20191009223333.png)
+
 何如获取RingBuffer下一个槽的序号？
 
 ```java
@@ -263,6 +265,8 @@ end
 3-->0
 ```
 
+![](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20191009223309.png)
+
 由于sequence是不断自增，当移动到4的时候，取模又会回到0的位置
 
 ```mermaid
@@ -276,7 +280,7 @@ end
 3-->0
 ```
 
-
+![](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20191009223228.png)
 
 
 
