@@ -121,8 +121,6 @@ sequencer-->publish-更新队列头尾指针
 
 ```
 
-![](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20191009223333.png)
-
 何如获取RingBuffer下一个槽的序号？
 
 ```java
@@ -186,8 +184,8 @@ sequencer-->publish-更新队列头尾指针
         }
     }
 ```
-输出结果
-```java
+
+```
 cursor:0
 nextValue:0
 wrapPoint:-16
@@ -199,7 +197,84 @@ nextValue:1
 wrapPoint:-15
 cachedValue:-1
 gatingSequences:
-...
+
+cursor:2
+nextValue:2
+wrapPoint:-14
+cachedValue:-1
+gatingSequences:
+
+cursor:3
+nextValue:3
+wrapPoint:-13
+cachedValue:-1
+gatingSequences:
+
+cursor:4
+nextValue:4
+wrapPoint:-12
+cachedValue:-1
+gatingSequences:
+
+cursor:5
+nextValue:5
+wrapPoint:-11
+cachedValue:-1
+gatingSequences:
+
+cursor:6
+nextValue:6
+wrapPoint:-10
+cachedValue:-1
+gatingSequences:
+
+cursor:7
+nextValue:7
+wrapPoint:-9
+cachedValue:-1
+gatingSequences:
+
+cursor:8
+nextValue:8
+wrapPoint:-8
+cachedValue:-1
+gatingSequences:
+
+cursor:9
+nextValue:9
+wrapPoint:-7
+cachedValue:-1
+gatingSequences:
+
+cursor:10
+nextValue:10
+wrapPoint:-6
+cachedValue:-1
+gatingSequences:
+
+cursor:11
+nextValue:11
+wrapPoint:-5
+cachedValue:-1
+gatingSequences:
+
+cursor:12
+nextValue:12
+wrapPoint:-4
+cachedValue:-1
+gatingSequences:
+
+cursor:13
+nextValue:13
+wrapPoint:-3
+cachedValue:-1
+gatingSequences:
+
+cursor:14
+nextValue:14
+wrapPoint:-2
+cachedValue:-1
+gatingSequences:
 
 cursor:15
 nextValue:15
@@ -219,7 +294,83 @@ wrapPoint:1
 cachedValue:15
 gatingSequences:
 
-...
+cursor:18
+nextValue:18
+wrapPoint:2
+cachedValue:15
+gatingSequences:
+
+cursor:19
+nextValue:19
+wrapPoint:3
+cachedValue:15
+gatingSequences:
+
+cursor:20
+nextValue:20
+wrapPoint:4
+cachedValue:15
+gatingSequences:
+
+cursor:21
+nextValue:21
+wrapPoint:5
+cachedValue:15
+gatingSequences:
+
+cursor:22
+nextValue:22
+wrapPoint:6
+cachedValue:15
+gatingSequences:
+
+cursor:23
+nextValue:23
+wrapPoint:7
+cachedValue:15
+gatingSequences:
+
+cursor:24
+nextValue:24
+wrapPoint:8
+cachedValue:15
+gatingSequences:
+
+cursor:25
+nextValue:25
+wrapPoint:9
+cachedValue:15
+gatingSequences:
+
+cursor:26
+nextValue:26
+wrapPoint:10
+cachedValue:15
+gatingSequences:
+
+cursor:27
+nextValue:27
+wrapPoint:11
+cachedValue:15
+gatingSequences:
+
+cursor:28
+nextValue:28
+wrapPoint:12
+cachedValue:15
+gatingSequences:
+
+cursor:29
+nextValue:29
+wrapPoint:13
+cachedValue:15
+gatingSequences:
+
+cursor:30
+nextValue:30
+wrapPoint:14
+cachedValue:15
+gatingSequences:
 
 cursor:31
 nextValue:31
@@ -233,56 +384,50 @@ Process finished with exit code 0
 
 wrapPoint相当于RingBuffer的头指针
 
-cursor相当于RingBuffer的尾指针。
+cursor相当于RingBuffer的尾指针
 
-RingBuffer获取具体对象的方法。
+### 消费者
+
+BatchEventProcessor是EventProcessor的子类。
 
 ```java
-protected final E elementAt(long sequence)
+private void processEvents()
     {
-        return (E) UNSAFE.getObject(entries, REF_ARRAY_BASE + ((sequence & indexMask) << REF_ELEMENT_SHIFT));
+        T event = null;
+        long nextSequence = sequence.get() + 1L;
+
+        while (true)
+        {
+            try
+            {
+                //这里涉及到消费者的等待策略的逻辑
+                final long availableSequence = sequenceBarrier.waitFor(nextSequence);
+                if (batchStartAware != null)
+                {
+                    batchStartAware.onBatchStart(availableSequence - nextSequence + 1);
+                }
+                while (nextSequence <= availableSequence)
+                {
+                    event = dataProvider.get(nextSequence);
+                    //消费者事件执行的逻辑
+                    eventHandler.onEvent(event, nextSequence, nextSequence == availableSequence);
+                    nextSequence++;
+                }
+
+                sequence.set(availableSequence);
+            }
+            ...
+        }
     }
 ```
 
-entries是一个对象数组。
-
-REF_ARRAY_BASE为起始偏移量
-
-indexMask=bufferSize-1，与的操作这里相当于取模。
-
-REF_ELEMENT_SHIFT为每个元素的大小/偏移量。
-
-我们举个例子，假设一个size=4的ringBuffer，它的结构为：
-
-```mermaid
-graph LR
-0-->1
-subgraph 尾指针
-3
-end
-1-->2
-2-->3
-3-->0
-```
-
-![](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20191009223309.png)
-
-由于sequence是不断自增，当移动到4的时候，取模又会回到0的位置
-
-```mermaid
-graph LR
-0-->1
-subgraph 尾指针
-0
-end
-1-->2
-2-->3
-3-->0
-```
-
-![](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/20191009223228.png)
 
 
+问题
+
+- disruptor为什么快？
+- SequenceBarrier的作用？
+- disruptor的handleEventsWithWorkerPool和handleEventsWith的区别？
 
 ### 参考文献
 
@@ -291,3 +436,11 @@ end
 [并发框架Disruptor译文](https://ifeve.com/disruptor/)
 
 [disruptor github](https://github.com/LMAX-Exchange/disruptor)
+
+[dissecting-disruptor-wiring-up](http://ifeve.com/dissecting-disruptor-wiring-up/)
+
+重点关注 **How consumer dependencies work in the Disruptor** 
+
+[如何使用Disruptor（二）如何从Ringbuffer读取](https://ifeve.com/dissecting_the_disruptor_how_doi_read_from_the_ring_buffer)
+
+比较重要，介绍RingBuffer的数据读取流程。
