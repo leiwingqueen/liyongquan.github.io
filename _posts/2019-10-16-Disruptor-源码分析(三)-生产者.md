@@ -48,6 +48,44 @@ Run 6, Disruptor=81,699,346 ops/sec
 
 ### 源码分析
 
+SingleProducerSequencer.java
+
+```java
+ @Override
+    public long next(int n)
+    {
+        if (n < 1)
+        {
+            throw new IllegalArgumentException("n must be > 0");
+        }
+
+        long nextValue = this.nextValue;
+
+        long nextSequence = nextValue + n;
+        long wrapPoint = nextSequence - bufferSize;
+        long cachedGatingSequence = this.cachedValue;
+
+        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue)
+        {
+            cursor.setVolatile(nextValue);  // StoreLoad fence
+
+            long minSequence;
+            while (wrapPoint > (minSequence = Util.getMinimumSequence(gatingSequences, nextValue)))
+            {
+                LockSupport.parkNanos(1L); // TODO: Use waitStrategy to spin?
+            }
+
+            this.cachedValue = minSequence;
+        }
+
+        this.nextValue = nextSequence;
+
+        return nextSequence;
+    }
+```
+
+
+
 
 
 ### 参考
