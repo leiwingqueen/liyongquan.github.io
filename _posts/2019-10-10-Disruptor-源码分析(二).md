@@ -293,12 +293,132 @@ m2-->m3(2)
 m3-->m4(3)
 m4-->m5(4)
 subgraph sequence
+subgraph availableSequence
 m4
+end
 end
 subgraph nextSequence
 m5
 end
 ```
 
+由于BatchEventProcessor是并行的模型，对于sequence和nextSequence并不会产生竞争，因此也需要锁来协调。
 
+我们需要重点关注的是WorkProcessor这个类。
+
+```java
+            try
+            {
+                // if previous sequence was processed - fetch the next sequence and set
+                // that we have successfully processed the previous sequence
+                // typically, this will be true
+                // this prevents the sequence getting too far forward if an exception
+                // is thrown from the WorkHandler
+                if (processedSequence)
+                {
+                    processedSequence = false;
+                    do
+                    {
+                        nextSequence = workSequence.get() + 1L;
+                        sequence.set(nextSequence - 1L);
+                    }
+                    while (!workSequence.compareAndSet(nextSequence - 1L, nextSequence));
+                }
+
+                if (cachedAvailableSequence >= nextSequence)
+                {
+                    event = ringBuffer.get(nextSequence);
+                    workHandler.onEvent(event);
+                    processedSequence = true;
+                }
+                else
+                {
+                    cachedAvailableSequence = sequenceBarrier.waitFor(nextSequence);
+                }
+            }
+```
+
+我们用一个图来模拟整个过程
+
+```mermaid
+graph LR
+subgraph 消费者指针
+m2(1)
+end
+m1(0)-->m2
+m2-->m3(2)
+subgraph 生产者指针
+m4(3)
+end
+m3-->m4
+m4-->m5(4)
+c1(消费者1)
+c2(消费者2)
+c1==>|抢消息1|m2
+c2==>|抢消息1|m2
+```
+
+假设消费者1抢成功，并成功把 消费者的指针往下挪一位。
+
+```mermaid
+graph LR
+subgraph 消费者指针
+m3
+end
+m1(0)-->m2(1)
+m2-->m3(2)
+subgraph 生产者指针
+m4(3)
+end
+m3-->m4
+m4-->m5(4)
+c1(消费者1)
+c2(消费者2)
+c1==>|抢成功|m2
+c1==>|事件处理|c1
+c2==>|继续抢消费者指针|m3
+```
+
+消费者1抢到消息1，然后接下来进行事件处理。抢不到消费的消费者2继续抢消费者指针。
+
+```mermaid
+graph LR
+m1(0)-->m2(1)
+m2-->m3(2)
+subgraph 生产者指针
+subgraph 消费者指针
+m4(3)
+end
+end
+m3-->m4
+m4-->m5(4)
+c1(消费者1)
+c2(消费者2)
+c1==>|继续抢消费者指针|m4
+c2==>|抢成功|m3
+c2==>|事件处理|c2
+```
+
+消费者2抢消息2成功，接着继续处理消息。消费者1抢消息3
+
+```mermaid
+graph LR
+m1(0)-->m2(1)
+m2-->m3(2)
+subgraph 生产者指针
+m4(3)
+end
+subgraph 消费者指针
+m5
+end
+m3-->m4
+m4-->m5(4)
+c1(消费者1)
+c2(消费者2)
+c1==>|抢成功|m4
+c1==>|事件处理|c1
+c2==>|等待新消息|m5
+```
+
+如果等待策略
 
