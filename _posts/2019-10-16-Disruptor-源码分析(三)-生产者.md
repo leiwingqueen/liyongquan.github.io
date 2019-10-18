@@ -48,16 +48,25 @@ Run 6, Disruptor=81,699,346 ops/sec
 
 ### 源码分析
 
+单生产者模式和多生产者模式的区别是在构建Sequencer的时候选择用哪一种实现。
+
+- SingleProducerSequencer
+
+单生产者模式
+
+- MultiProducerSequencer
+
+多生产者模式
+
+![类图](https://leiwingqueen-1300197911.cos.ap-guangzhou.myqcloud.com/QQ%E6%88%AA%E5%9B%BE20191018091538.png )
+
 SingleProducerSequencer.java
 
 ```java
  @Override
     public long next(int n)
     {
-        if (n < 1)
-        {
-            throw new IllegalArgumentException("n must be > 0");
-        }
+       ...
 
         long nextValue = this.nextValue;
 
@@ -84,9 +93,59 @@ SingleProducerSequencer.java
     }
 ```
 
+我们把关注点放在nextSequence，因为是单线程，所以通过简单地自增来获得下一个写入点。
 
+MultiProducerSequencer.java
 
+```java
+@Override
+    public long next(int n)
+    {
+       ...
 
+        long current;
+        long next;
+
+        do
+        {
+            current = cursor.get();
+            next = current + n;
+
+            long wrapPoint = next - bufferSize;
+            long cachedGatingSequence = gatingSequenceCache.get();
+
+            if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current)
+            {
+                long gatingSequence = Util.getMinimumSequence(gatingSequences, current);
+
+                if (wrapPoint > gatingSequence)
+                {
+                    LockSupport.parkNanos(1); // TODO, should we spin based on the wait strategy?
+                    continue;
+                }
+
+                gatingSequenceCache.set(gatingSequence);
+            }
+            else if (cursor.compareAndSet(current, next))
+            {
+                break;
+            }
+        }
+        while (true);
+
+        return next;
+    }
+```
+
+cursor通过CAS来实现cursor指针的移动，从而保证在并发场景下，ringbuffer一个存储空间只会被一个生产者写入。
+
+这里我们发现除了cursor以外还有一些比较重要的概念。
+
+- cachedGatingSequence
+- wrapPoint
+- gatingSequences
+
+这里暂不讨论，我们放到下一篇blog再去深入分析
 
 ### 参考
 
