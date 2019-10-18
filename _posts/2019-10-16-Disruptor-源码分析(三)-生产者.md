@@ -147,6 +147,10 @@ cursor通过CAS来实现cursor指针的移动，从而保证在并发场景下�
 
 这里暂不讨论，我们放到下一篇blog再去深入分析
 
+### 总结
+
+disruptor通过使用CAS来保证数据的一致性，而不是使用锁的方式，从而把消息写入的速度提高。
+
 ### 参考
 
 [disruptor wiki]( https://github.com/LMAX-Exchange/disruptor/wiki/Getting-Started )
