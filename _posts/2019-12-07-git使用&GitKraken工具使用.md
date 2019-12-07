@@ -104,3 +104,9 @@ git log --format='%aN' | sort -u | while read name; do echo -en "$name\t"; git l
 - ssh
 
 见  [ssh-keys_8](https://gitee.com/oschina/git-osc/wikis/帮助#ssh-keys_8) 
+
+### 参考文献
+
+[Git实用操作和GitKraken工具使用](https://blog.csdn.net/xiaopihai86/article/details/80894862)
+
+[Gitkraken使用教程](https://blog.csdn.net/niuchenliang524/article/details/81355699)
