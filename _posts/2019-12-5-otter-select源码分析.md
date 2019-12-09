@@ -276,9 +276,21 @@ public interface OtterSelector<T> {
 
 #### startProcessTermin
 
+处理结束信号。ack或者rollback。
 
+#### startProcessSelect
 
+执行数据分发工作。
 
+```java
+private void processSelect() {
+        while (running) {
+            //获取数据源的binlog数据   
+			Message gotMessage = otterSelector.selector();
+            ...
+                final BatchTermin batchTermin = new BatchTermin(message.getId(), etlEventData.getProcessId());
+                batchBuffer.put(batchTermin); // 添加到待响应的buffer列表
+```
 
 ### 总结
 
