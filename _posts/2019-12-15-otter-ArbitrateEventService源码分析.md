@@ -104,5 +104,50 @@ S/E/T/L事件仲裁分别是通过SelectDelegateArbitrateEvent、ExtractDelegate
 		</property>
 ```
 
+先看下SelectArbitrateEvent的核心方法。
+
+```java
+/**
+ * 抽象select模块的调度接口
+ * 
+ * @author jianghang 2012-9-27 下午09:54:53
+ * @version 4.1.0
+ */
+public interface SelectArbitrateEvent extends ArbitrateEvent {
+
+    public EtlEventData await(Long pipelineId) throws InterruptedException;
+
+    public void single(EtlEventData data);
+}
+```
+
+代理类的本质就是根据pipeline的配置，调用具体的实现类。
+
+```java
+/**
+ * select delegate实现
+ * 
+ * @author jianghang 2012-9-28 上午10:36:38
+ * @version 4.1.0
+ */
+public class SelectDelegateArbitrateEvent extends AbstractDelegateArbitrateEvent implements SelectArbitrateEvent {
+
+    private Map<ArbitrateMode, SelectArbitrateEvent> delegate;
+
+    public EtlEventData await(Long pipelineId) throws InterruptedException {
+        return delegate.get(chooseMode(pipelineId)).await(pipelineId);
+    }
+
+    public void single(EtlEventData data) {
+        delegate.get(chooseMode(data.getPipelineId())).single(data);
+    }
+
+    public void setDelegate(Map<ArbitrateMode, SelectArbitrateEvent> delegate) {
+        this.delegate = delegate;
+    }
+
+}
+```
+
 
 
