@@ -239,5 +239,9 @@ Future future = completionService.submit(new DatabaseExtractWorker(pipeline, ite
 1. extract的核心功能？
 2. 反查数据库的作用在哪里？为什么要这么做？
 
+### 参考文献
+
+[Canal和Otter讨论二(原理与实践)]( https://www.cnblogs.com/yanshaoshuai/p/11987281.html )
+
 
 
