@@ -2,7 +2,7 @@
 layout: post
 title:  "otter ArbitrateEventService源码分析"
 description: otter ArbitrateEventService源码分析
-date:   2019-12-15 17:53:00 +000
+date: 2019-12-15 17:53:00 +000
 categories: otter
 tags: otter
 ---
