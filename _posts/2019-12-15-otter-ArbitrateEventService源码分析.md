@@ -121,6 +121,16 @@ public interface SelectArbitrateEvent extends ArbitrateEvent {
 }
 ```
 
+这里有两个核心方法。`await`和`single`
+
+- await
+
+从管道(pipeline)获取数据
+
+- single
+
+类似ack操作
+
 代理类的本质就是根据pipeline的配置，调用具体的实现类。
 
 ```java
@@ -148,6 +158,130 @@ public class SelectDelegateArbitrateEvent extends AbstractDelegateArbitrateEvent
 
 }
 ```
+
+#### SelectMemoryArbitrateEvent-内存仲裁
+
+```java
+   public EtlEventData await(Long pipelineId) throws InterruptedException {
+       ...
+        MemoryStageController stageController = ArbitrateFactory.getInstance(pipelineId, MemoryStageController.class);
+        Long processId = stageController.waitForProcess(StageType.SELECT); // 符合条件的processId
+
+        ChannelStatus status = permitMonitor.getChannelPermit();
+        if (status.isStart()) {// 即时查询一下当前的状态，状态随时可能会变
+            EtlEventData eventData = new EtlEventData();
+            eventData.setPipelineId(pipelineId);
+            eventData.setProcessId(processId);
+            eventData.setStartTime(new Date().getTime());// 返回当前时间
+            Long nid = ArbitrateConfigUtils.getCurrentNid();
+            eventData.setCurrNid(nid);
+            eventData.setNextNid(nid);
+            return eventData;// 只有这一条路返回
+        } else {
+            ...
+        }
+    }
+
+	public void single(EtlEventData data) {
+        Assert.notNull(data);
+        MemoryStageController stageController = ArbitrateFactory.getInstance(data.getPipelineId(),
+                                                                             MemoryStageController.class);
+        stageController.single(StageType.SELECT, data);// 通知下一个节点
+    }
+```
+
+事实上调用到的核心类是`MemoryStageController`
+
+```java
+public Long waitForProcess(StageType stage) throws InterruptedException {
+        if (stage.isSelect() && !replys.containsKey(stage)) {
+            initSelect();
+        }
+        Long processId = replys.get(stage).take();
+        if (stage.isSelect()) {// select一旦分出processId，就需要在progress中记录一笔，用于判断谁是最小的一个processId
+            progress.put(processId, nullProgress);
+        }
+        return processId;
+    }
+
+    public synchronized boolean single(StageType stage, EtlEventData etlEventData) {
+        boolean result = false;
+        switch (stage) {
+            case SELECT:
+                if (progress.containsKey(etlEventData.getProcessId())) {// 可能发生了rollback，对应的progress已经被废弃
+                    progress.put(etlEventData.getProcessId(), new StageProgress(stage, etlEventData));
+                    replys.get(StageType.EXTRACT).offer(etlEventData.getProcessId());
+                    result = true;
+                }
+                break;
+            case EXTRACT:
+                if (progress.containsKey(etlEventData.getProcessId())) {
+                    progress.put(etlEventData.getProcessId(), new StageProgress(stage, etlEventData));
+                    replys.get(StageType.TRANSFORM).offer(etlEventData.getProcessId());
+                    result = true;
+                }
+                break;
+            case TRANSFORM:
+                if (progress.containsKey(etlEventData.getProcessId())) {
+                    progress.put(etlEventData.getProcessId(), new StageProgress(stage, etlEventData));
+                    result = true;
+                }
+                // 并不是立即触发，通知最小的一个process启动
+                computeNextLoad();
+                break;
+            case LOAD:
+                Object removed = progress.remove(etlEventData.getProcessId());
+                // 并不是立即触发，通知下一个最小的一个process启动
+                computeNextLoad();
+                // 一个process完成了，自动添加下一个process
+                if (removed != null) {
+                    replys.get(StageType.SELECT).offer(atomicMaxProcessId.incrementAndGet());
+                    result = true;
+                }
+                break;
+            default:
+                break;
+        }
+
+        return result;
+    }
+```
+
+这里简单梳理下流程。
+
+```java
+private Map<StageType, ReplyProcessQueue> replys;
+```
+
+这里为每一个Stage(S/E/T/L)都维护了一个队列。
+
+每个阶段的Task都是从对应的自己的队列中获取数据。`ReplyProcessQueue`是一个典型的阻塞队列。
+
+```mermaid
+graph LR
+subgraph 队列
+SQ(S)
+EQ(E)
+TQ(T)
+LQ(L)
+end
+subgraph task
+S((S))
+E((E))
+T((T))
+L((L))
+end
+SQ-->|wait|S
+S-->|single|EQ
+EQ-->|wait|E
+E-->|single|TQ
+TQ-->|wait|T
+T-->|single|LQ
+LQ-->|wait|L
+L-->|single,processId++|SQ
+```
+
+
 
 
 
