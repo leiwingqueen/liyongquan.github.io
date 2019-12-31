@@ -114,6 +114,31 @@ TransformServiceDemo single...processId:8
 LoadServiceDemo single...processId:6
 ```
 
+### 调用链跟踪
+
+SelectRpcArbitrateEvent仲裁调度逻辑主要依赖`AbstractProcessListener`
+
+```java
+/**
+     * 阻塞方法，获取对应可以被处理的processId，支持中断处理
+     */
+    public Long waitForProcess() throws InterruptedException {
+        // take和history.put操作非原子，addReply操作时会出现并发问题，同一个processId插入两次
+        Long processId = (Long) replyProcessIds.take();
+        logger.debug("## {} get reply id [{}]", ClassUtils.getShortClassName(this.getClass()), processId);
+        return processId;
+    }
+
+    protected synchronized void addReply(Long processId) {
+        boolean isSuccessed = replyProcessIds.offer(processId);
+        ...
+    }
+```
+
+内部维护了一个队列`replyProcessIds`。我们重点关注下addReply的方法在哪里触发
+
+`ProcessMonitor.init` > `ProcessMonitor.initProcess` > `ProcessMonitor.processChanged`
+
 
 
 ### 参考文献
