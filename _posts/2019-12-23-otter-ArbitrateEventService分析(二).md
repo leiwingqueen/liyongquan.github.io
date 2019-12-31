@@ -116,7 +116,9 @@ LoadServiceDemo single...processId:6
 
 
 
+### 参考文献
 
+[Otter调度模型](https://www.bookstack.cn/read/otter/2.md)
 
 
 
