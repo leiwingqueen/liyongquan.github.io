@@ -1,11 +1,9 @@
----
 layout: post
 title:  "bookeeper学习笔记"
 description: bookeeper学习笔记
 date:   2020-07-04 11:00:00 +000
 categories: pulsar
 tags: pulsar
----
 
 ### Bookeeper是什么
 
@@ -65,13 +63,31 @@ bin/bookkeeper localbookie 10
 - sequentially, and
 - at most once.
 
-ledger负责存储entry，保证顺序存储，最多只保存一次。ledger是一个逻辑概念，一个ledger可能会在不同的bookie上有多个副本。
+ledger负责存储entry，保证顺序存储，最多只保存一次。ledger是一个逻辑概念，一个ledger可能会在不同的bookie上有多个副本。另外entry写入的顺序正确性是由客户端去保证的。
 
 eg.假设有B1~B4,4个bookie，可能会有如下映射关系
 
 ledger1:[B1,B2,B3]
 
 ledger2:[B2,B3,B4]
+
+#### Metadata storage(元数据存储)
+
+使用zookeeper实现
+
+#### Bookies数据管理
+
+- Journals
+
+bookkeeper的WAL。
+
+数据写入ledger前会先写入一个事务日志，事务日志由Journals维护
+
+- Entry logs
+
+
+
+
 
 ### 参考
 
