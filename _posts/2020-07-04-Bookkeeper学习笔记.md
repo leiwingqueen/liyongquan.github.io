@@ -113,7 +113,59 @@ index pages刷写到磁盘的场景
 1. ledger cache达到最大值
 2. 后台定时线程刷写
 
+//TODO:增加图片描述
 
+//TODO：数据恢复机制
+
+- Data compaction
+
+1. minor compaction
+2. major compaction
+
+### ZooKeeper metadata
+
+元数据存储
+
+### Ledger manager
+
+- 扁平化管理(官方推荐)
+- 分层管理
+
+### replication protocal(复制协议)
+
+#### Ledger metadata
+
+| Parameter         | Name   | Meaning                                                      |
+| :---------------- | :----- | :----------------------------------------------------------- |
+| Identifer         |        | A 64-bit integer, unique within the system                   |
+| Ensemble size     | **E**  | The number of nodes the ledger is stored on                  |
+| Write quorum size | **Qw** | The number of nodes each entry is written to. In effect, the max replication for the entry. |
+| Ack quorum size   | **Qa** | The number of nodes an entry must be acknowledged on. In effect, the minimum replication for the entry. |
+| Current state     |        | The current status of the ledger. One of `OPEN`, `CLOSED`, or `IN_RECOVERY`. |
+| Last entry        |        | The last entry in the ledger or `NULL` is the current state is not `CLOSED`. |
+
+ **E >= Qw >= Qa**
+
+#### Write quorums
+
+>  starting at the bookie at index (entryid % **E**)
+
+striping条带化存储(类似滑动窗口)
+
+| Entry | Write quorum |
+| :---- | :----------- |
+| 0     | B1, B2, B3   |
+| 1     | B2, B3, B4   |
+| 2     | B3, B4, B1   |
+| 3     | B4, B1, B2   |
+| 4     | B1, B2, B3   |
+| 5     | B2, B3, B4   |
+
+#### Ack quorums
+
+只要Qa个bookie确认OK，认为本次写入成功
+
+==接收Qa-1的故障
 
 
 
