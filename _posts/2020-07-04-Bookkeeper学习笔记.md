@@ -85,6 +85,33 @@ bookkeeper的WAL。
 数据写入ledger前会先写入一个事务日志，事务日志由Journals维护
 
 - Entry logs
+- Index files
+
+记录entry log的偏移量
+
+由ledger创建
+
+包含一个头部和若干个定长的索引页
+
+异步写入(避免随机IO影响性能)
+
+- Ledger cache
+
+index file在持久化前会先保存到ledger cache
+
+- 增加entry(流程)
+
+1. The entry is appended to an entry log
+2. The index of the entry is updated in the ledger cache
+3. A transaction corresponding to this entry update is appended to the journal
+4. A response is sent to the BookKeeper client
+
+- Data flush(数据刷写)
+
+index pages刷写到磁盘的场景
+
+1. ledger cache达到最大值
+2. 后台定时线程刷写
 
 
 
